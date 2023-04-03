@@ -1,51 +1,42 @@
-import 'package:myresto/core/database/food_db.dart';
+import 'package:dio/dio.dart';
+import 'package:myresto/core/config/endpoint.dart';
 import 'package:myresto/core/models/foods_mdl.dart';
 
 class FoodsServices {
-  static FoodsDB _foodsDB;
+  static Dio dio = new Dio();
 
   static Future<List<FoodModel>> getAll() async {
-    _foodsDB = new FoodsDB();
-
-    var _result = await _foodsDB.getAll();
-    var data = <FoodModel>[];
-    _result.forEach((foods) {
-      data.add(FoodModel.fromMap(foods));
+    var response = await dio.get(Endpoint.baseFoods,
+        options: Options(headers: {"Accept": "application/json"}));
+    var _foodData = <FoodModel>[];
+    response.data["data"].forEach((value) {
+      _foodData.add(FoodModel.fromJson(value));
     });
-
-    return data;
   }
 
-  static Future<bool> create(FoodModel foodModel) async {
-    _foodsDB = new FoodsDB();
+  static Future<FoodResponse> createFood(FoodModel foodModel) async {
+    var response = await dio.post(Endpoint.baseFoods,
+        data: FormData.fromMap(foodModel.toMap()),
+        options: Options(headers: {"Accept": "application/json"}));
 
-    var _result = await _foodsDB.create(foodModel);
-    if (_result != null) {
-      return true;
-    } else {
-      return false;
-    }
+    return FoodResponse.fromJson(response.data);
   }
 
-  static Future<bool> update(FoodModel foodModel, String id) async {
-    _foodsDB = new FoodsDB();
+  static Future<FoodResponse> updateFood(FoodModel foodModel, String id) async {
+    var foodData = foodModel.toMap();
+    foodData['_method'] = 'PUT';
 
-    var _result = await _foodsDB.update(foodModel, int.parse(id));
-    if (_result != null) {
-      return true;
-    } else {
-      return false;
-    }
+    var response = await dio.post(Endpoint.baseFoods + "/${id}",
+        data: FormData.fromMap(foodData),
+        options: Options(headers: {"Accept": "application/json"}));
+
+    return FoodResponse.fromJson(response.data);
   }
 
-  static Future<bool> delete(FoodModel foodModel) async {
-    _foodsDB = new FoodsDB();
+  static Future<FoodResponse> deleteFood(String id) async {
+    var response = await dio.delete(Endpoint.baseFoods + "/${id}",
+        options: Options(headers: {"Accept": "application/json"}));
 
-    var _result = await _foodsDB.delete(foodModel.id);
-    if (_result != null) {
-      return true;
-    } else {
-      return false;
-    }
+    return FoodResponse.fromJson(response.data);
   }
 }
