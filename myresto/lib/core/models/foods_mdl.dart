@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 class FoodModel {
   String id;
   String title;
@@ -5,6 +7,7 @@ class FoodModel {
   int price;
   String image;
   String fullDescription;
+  MultipartFile imageFile;
 
   //constructor
   FoodModel(
@@ -13,16 +16,18 @@ class FoodModel {
       this.description,
       this.image,
       this.price,
-      this.fullDescription});
+      this.fullDescription,
+      this.imageFile});
 
-  factory FoodModel.fromMap(Map<String, dynamic> map) {
+  factory FoodModel.fromJson(Map<String, dynamic> json) {
     return FoodModel(
-        id: map['id'].toString(),
-        title: map['title'],
-        description: map['description'],
-        image: map['image'],
-        price: map['price'],
-        fullDescription: map['full_description']);
+      id: json['id'].toString(),
+      title: json['title'],
+      description: json['description'],
+      image: json['image'],
+      price: int.parse(json['price'].toString()),
+      fullDescription: json['full_description'],
+    );
   }
 
   Map<String, dynamic> toMap() {
@@ -37,5 +42,17 @@ class FoodModel {
     map['image'] = image;
 
     return map;
+  }
+}
+
+class FoodResponse {
+  int status;
+  String message;
+
+  FoodResponse({this.status, this.message});
+
+  factory FoodResponse.fromJson(Map<String, dynamic> json) {
+    return FoodResponse(
+        status: int.parse(json['status'].toString()), message: json['message']);
   }
 }
