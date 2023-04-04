@@ -7,7 +7,7 @@ class CartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.pinkAccent,
         title: Text(
           "Cart",
           style: TextStyle(color: Colors.white),
@@ -180,7 +180,7 @@ class _CartBodyState extends State<CartBody> {
                             child: RaisedButton(
                               color: Colors.red,
                               onPressed: () => decreaseQuantity(index),
-                              padding: EdgeInsets.all(0.7),
+                              padding: EdgeInsets.all(0),
                               child: Icon(
                                 Icons.minimize,
                                 color: Colors.white,

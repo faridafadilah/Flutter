@@ -2,22 +2,23 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class InputField extends StatelessWidget {
-  TextEditingController controller;
+  final TextEditingController controller;
+  final TextInputType type;
   TextInputAction action;
-  TextInputType type;
-  String hintText;
-  bool sercureText;
-  bool readOnly;
-  Function onTap;
+  final String hintText;
+  final bool secureText;
+  final bool readOnly; // add this line
+  final Function onTap;
 
-  InputField(
-      {this.controller,
-      this.action,
-      this.type,
-      this.hintText,
-      this.sercureText,
-      this.readOnly,
-      this.onTap});
+  InputField({
+    this.controller,
+    this.type,
+    this.hintText,
+    this.secureText = false,
+    this.readOnly = false, // set a default value
+    this.onTap,
+    this.action,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +35,7 @@ class InputField extends StatelessWidget {
           onTap: () => onTap != null ? onTap() : {},
           textInputAction: action,
           keyboardType: type,
-          obscureText: sercureText,
+          obscureText: secureText,
           readOnly: readOnly,
           decoration:
               InputDecoration(hintText: hintText, border: InputBorder.none),

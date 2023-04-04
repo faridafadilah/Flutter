@@ -24,7 +24,7 @@ class ProfileBody extends StatelessWidget {
         Container(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height / 2.5,
-            color: Colors.orange,
+            color: Colors.pinkAccent,
             child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,

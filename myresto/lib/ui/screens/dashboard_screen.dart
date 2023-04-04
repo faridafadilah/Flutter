@@ -45,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         currentIndex: selectedIndex,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white.withOpacity(0.4),
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.pinkAccent,
         onTap: _onNavBarTapped,
       ),
     );

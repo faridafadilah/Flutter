@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myresto/ui/screens/dashboard_screen.dart';
+import 'package:myresto/ui/screens/login_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
             primaryColor: Colors.pinkAccent, accentColor: Colors.pinkAccent),
-        home: DashboardScreen(),
+        home: LoginScreen(),
         routes: {"/dashboard": (context) => DashboardScreen()});
   }
 }
