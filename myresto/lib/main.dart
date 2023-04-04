@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myresto/ui/screens/home_screen.dart';
+import 'package:myresto/ui/screens/dashboard_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
             primaryColor: Colors.pinkAccent, accentColor: Colors.pinkAccent),
-        home: HomeScreen(),
-        routes: {"/home": (context) => HomeScreen()});
+        home: DashboardScreen(),
+        routes: {"/dashboard": (context) => DashboardScreen()});
   }
 }

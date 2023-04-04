@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:myresto/core/models/foods_mdl.dart';
 import 'package:myresto/core/services/food_services.dart';
+import 'package:myresto/core/utils/toast_utils.dart';
 import 'package:myresto/ui/screens/update_screen.dart';
 
 class DetailScreen extends StatelessWidget {
@@ -12,20 +13,16 @@ class DetailScreen extends StatelessWidget {
   DetailScreen({this.foodModel});
 
   void deleteFood(BuildContext context) async {
-    await FoodsServices.delete(foodModel);
-    Fluttertoast.showToast(
-        msg: 'Successfully! delete food',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.black87,
-        textColor: Colors.white,
-        fontSize: 16.0);
-
-    Future.delayed(Duration(seconds: 1), () {
-      Navigator.pushNamedAndRemoveUntil(
-          context, '/home', (Route<dynamic> routes) => false);
-    });
+    FoodResponse response = await FoodsServices.deleteFood(foodModel.id);
+    if (response.status == 200) {
+      ToastUtils.show(response.message);
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/dashboard', (Route<dynamic> routes) => false);
+      });
+    } else {
+      ToastUtils.show(response.message);
+    }
   }
 
   @override
@@ -81,8 +78,8 @@ class DetailBody extends StatelessWidget {
                 borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(15.0),
                     bottomRight: Radius.circular(15.0)),
-                child: Image.memory(
-                  base64Decode(foodModel.image),
+                child: Image.network(
+                  foodModel.image,
                   width: double.infinity,
                   height: MediaQuery.of(context).size.width / 2,
                   fit: BoxFit.cover,
@@ -142,7 +139,7 @@ class DetailBody extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: new Text(
-                    foodModel?.fullDescription ?? '',
+                    foodModel.fullDescription,
                     style: TextStyle(
                       fontSize: 15,
                     ),

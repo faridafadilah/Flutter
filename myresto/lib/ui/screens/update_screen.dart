@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:myresto/core/models/foods_mdl.dart';
 import 'package:myresto/core/services/food_services.dart';
+import 'package:myresto/core/utils/toast_utils.dart';
 import 'package:myresto/ui/widgets/custom_textfield.dart';
 
 class UpdateScreen extends StatelessWidget {
@@ -37,14 +39,14 @@ class _UpdateFoodState extends State<UpdateFood> {
   File image;
   var titleController = TextEditingController();
   var descriptionController = TextEditingController();
-  var fullDescriptionControlelr = TextEditingController();
+  var fullDescriptionController = TextEditingController();
   var priceController = TextEditingController();
 
   void imagePick() async {
     var _image = await ImagePicker.pickImage(source: ImageSource.gallery);
     if (_image != null) {
       setState(() {
-        image = _image;
+        image = File(_image.path);
       });
     }
   }
@@ -52,59 +54,34 @@ class _UpdateFoodState extends State<UpdateFood> {
   void updateMakanan() async {
     if (titleController.text.isNotEmpty &&
         descriptionController.text.isNotEmpty &&
-        fullDescriptionControlelr.text.isNotEmpty) {
+        fullDescriptionController.text.isNotEmpty) {
       FoodModel foodModel = FoodModel(
-        title: titleController.text,
-        description: descriptionController.text,
-        price: int.parse(priceController.text),
-        fullDescription: fullDescriptionControlelr.text,
-        image: image != null
-            ? base64Encode(image.readAsBytesSync())
-            : widget.foodModel.image,
-      );
+          title: titleController.text,
+          description: descriptionController.text,
+          price: int.parse(priceController.text),
+          fullDescription: fullDescriptionController.text,
+          imageFile:
+              image != null ? await MultipartFile.fromFile(image.path) : null);
 
-      var result = await FoodsServices.update(foodModel, widget.foodModel.id);
-
-      if (result) {
-        Fluttertoast.showToast(
-            msg: "Successfully! update food.",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.CENTER,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Colors.black87,
-            textColor: Colors.white,
-            fontSize: 16.0);
-        Future.delayed(Duration(seconds: 1), () {
-          Navigator.pushNamedAndRemoveUntil(
-              context, '/home', (Route<dynamic> routes) => false);
-        });
+      FoodResponse response =
+          await FoodsServices.updateFood(foodModel, widget.foodModel.id);
+      if (response.status == 200) {
+        ToastUtils.show(response.message);
+        Navigator.pushNamedAndRemoveUntil(
+            context, "/dashboard", (Route<dynamic> routes) => false);
       } else {
-        Fluttertoast.showToast(
-            msg: "Failed! update food.",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.CENTER,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Colors.black87,
-            textColor: Colors.white,
-            fontSize: 16.0);
+        ToastUtils.show(response.message);
       }
     } else {
-      Fluttertoast.showToast(
-          msg: "Field not empty!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.black87,
-          textColor: Colors.white,
-          fontSize: 16.0);
+      ToastUtils.show("Field not empty!");
     }
   }
 
-  void loadFood() {
+  void loadFoods() {
     setState(() {
       titleController.text = widget.foodModel.title;
       descriptionController.text = widget.foodModel.description;
-      fullDescriptionControlelr.text = widget.foodModel.fullDescription;
+      fullDescriptionController.text = widget.foodModel.fullDescription;
       priceController.text = widget.foodModel.price.toString();
     });
   }
@@ -112,11 +89,13 @@ class _UpdateFoodState extends State<UpdateFood> {
   @override
   void initState() {
     super.initState();
-    this.loadFood();
+    this.loadFoods();
   }
 
   @override
   Widget build(BuildContext context) {
+    var imageProvider =
+        image != null ? FileImage(image) : NetworkImage(widget.foodModel.image);
     return Container(
       padding: EdgeInsets.all(15),
       child: SingleChildScrollView(
@@ -134,9 +113,7 @@ class _UpdateFoodState extends State<UpdateFood> {
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                       image: DecorationImage(
-                        image: image != null
-                            ? FileImage(image)
-                            : MemoryImage(base64Decode(widget.foodModel.image)),
+                        image: imageProvider,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -164,7 +141,7 @@ class _UpdateFoodState extends State<UpdateFood> {
             CustomTextField(
                 action: TextInputAction.done,
                 type: TextInputType.text,
-                controller: fullDescriptionControlelr,
+                controller: fullDescriptionController,
                 hinText: 'Full Deskripsi'),
             SizedBox(height: 10),
             CustomTextField(

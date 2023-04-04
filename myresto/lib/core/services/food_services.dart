@@ -12,6 +12,7 @@ class FoodsServices {
     response.data["data"].forEach((value) {
       _foodData.add(FoodModel.fromJson(value));
     });
+    return _foodData; // tambahkan baris ini untuk mengembalikan data
   }
 
   static Future<FoodResponse> createFood(FoodModel foodModel) async {

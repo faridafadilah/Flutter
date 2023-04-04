@@ -26,7 +26,7 @@ class FoodModel {
       description: json['description'],
       image: json['image'],
       price: int.parse(json['price'].toString()),
-      fullDescription: json['full_description'],
+      fullDescription: json['fullDescription'],
     );
   }
 
@@ -37,9 +37,9 @@ class FoodModel {
     }
     map['title'] = title;
     map['description'] = description;
-    map['full_description'] = fullDescription;
+    map['fullDescription'] = fullDescription;
     map['price'] = price;
-    map['image'] = image;
+    map['image_file'] = imageFile;
 
     return map;
   }

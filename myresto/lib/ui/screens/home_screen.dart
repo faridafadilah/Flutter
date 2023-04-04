@@ -124,8 +124,8 @@ class _ListFoodState extends State<ListFood> {
                             Container(
                               width: 64,
                               height: 64,
-                              child: Image.memory(
-                                base64Decode(foods[index].image),
+                              child: Image.network(
+                                foods[index].image,
                                 fit: BoxFit.cover,
                               ),
                             ),
