@@ -1,10 +1,15 @@
 package com.example.myresto.models;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,5 +45,20 @@ public class Foods {
     this.fullDescription = fullDescription;
     this.price = price;
     this.image = image;
+  }
+
+  @JsonBackReference
+  @OneToMany(mappedBy = "food")
+  private List<Cart> carts;
+  
+  @JsonBackReference
+  @OneToMany(mappedBy = "food")
+  private List<Favorite> favorite;
+
+  public boolean isFavorite() {
+    if (favorite == null || favorite.isEmpty()) {
+        return false;
+    }
+    return true;
   }
 }

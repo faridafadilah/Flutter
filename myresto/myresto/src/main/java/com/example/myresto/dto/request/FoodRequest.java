@@ -1,4 +1,4 @@
-package com.example.myresto.dto;
+package com.example.myresto.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

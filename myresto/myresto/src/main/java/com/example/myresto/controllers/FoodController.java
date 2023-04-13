@@ -25,7 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.example.myresto.base.ResponAPI;
-import com.example.myresto.dto.FoodRequest;
+import com.example.myresto.dto.request.FoodRequest;
+import com.example.myresto.dto.response.FoodResponse;
 import com.example.myresto.models.Foods;
 import com.example.myresto.repository.FoodRepository;
 
@@ -38,21 +39,21 @@ public class FoodController {
   private final Path root = Paths.get("./imageFood");
 
   @GetMapping("")
-  public ResponseEntity<ResponAPI<List<Foods>>> getAll() {
-    // List<Foods> foods = repository.findAll();
-    // ResponAPI<List<Foods>> responAPI = new ResponAPI<>();
-    // if(foods != null) {
-    //   responAPI.setData(foods);
-    //   responAPI.setStatus(200);
-    //   responAPI.setMessage("Successfully get foods");
-    //   return ResponseEntity.status(HttpStatus.OK).body(responAPI);
-    // } else {
-    //   return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
-    // }
+  public ResponseEntity<ResponAPI<List<FoodResponse>>> getAll() {
     try{
-      List<Foods> foods = new ArrayList<>();
-      repository.findAll().forEach(foods::add);
-      ResponAPI<List<Foods>> responAPI = new ResponAPI<>();
+      List<FoodResponse> foods = new ArrayList<>();
+      repository.findAll().forEach(food -> {
+        FoodResponse foodResponse = new FoodResponse();
+        foodResponse.setId(food.getId());
+        foodResponse.setDescription(food.getDescription());
+        foodResponse.setFullDescription(food.getFullDescription());
+        foodResponse.setImage(food.getImage());
+        foodResponse.setPrice(food.getPrice());
+        foodResponse.setTitle(food.getTitle());
+        foodResponse.setFavorite(food.getFavorite());
+        foods.add(foodResponse);
+      });
+      ResponAPI<List<FoodResponse>> responAPI = new ResponAPI<>();
       responAPI.setData(foods);
       responAPI.setStatus(200);
       responAPI.setMessage("Successfully get foods");
@@ -61,6 +62,34 @@ public class FoodController {
       return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  // try {
+  //   ResponAPI<List<FavoriteResponse>> responAPI = new ResponAPI<>();
+  //   Optional<Users> uOptional = userRepository.findById(id);
+  //   if (!uOptional.isPresent()) {
+  //     responAPI.setMessage("Data User tidak ditemukan!");
+  //     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responAPI);
+  //   }
+  //   List<FavoriteResponse> favoriteResponses = new ArrayList<>();
+  //   repository.findAllByUsersAndFavorite(uOptional.get(), true).forEach(cart -> {
+  //     FavoriteResponse favoriteResponse = new FavoriteResponse();
+  //    favoriteResponse.setIdFavorite(cart.getId());
+  //    favoriteResponse.setFoodId(cart.getFood().getId());
+  //    favoriteResponse.setDescription(cart.getFood().getDescription());
+  //    favoriteResponse.setPhotoFood(cart.getFood().getImage());
+  //    favoriteResponse.setPrice(cart.getFood().getPrice());
+  //    favoriteResponse.setTitle(cart.getFood().getTitle());
+  //    favoriteResponse.setFavorite(cart.getFavorite());
+  //    favoriteResponses.add(favoriteResponse);
+  //   });
+  //   responAPI.setData(favoriteResponses);
+
+  //   responAPI.setStatus(200);
+  //   responAPI.setMessage("Successfully get Cart");
+  //   return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+  // } catch (Exception e) {
+  //   return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+  // }
 
   @GetMapping("/{id}")
   public ResponseEntity<ResponAPI<Foods>> getById(@PathVariable("id") long id) {
