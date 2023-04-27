@@ -37,7 +37,7 @@ public class Ulasan {
   private Users users;
   
   private String comment;
-  private int rating;
+  private double rating;
 
   @ManyToOne
   @JoinColumn(name = "food_id")
@@ -53,4 +53,9 @@ public class Ulasan {
   @Column(name = "updated_at")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "Asia/Jakarta")
   public Date updatedAt;
+
+  @ManyToOne
+  @JoinColumn(name = "history_id")
+  @JsonManagedReference
+  private History history;
 }

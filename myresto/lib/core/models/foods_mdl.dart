@@ -8,6 +8,8 @@ class FoodModel {
   String image;
   String fullDescription;
   MultipartFile imageFile;
+  String favorite;
+  int userId;
 
   //constructor
   FoodModel(
@@ -17,17 +19,19 @@ class FoodModel {
       this.image,
       this.price,
       this.fullDescription,
-      this.imageFile});
+      this.imageFile,
+      this.favorite,
+      this.userId});
 
   factory FoodModel.fromJson(Map<String, dynamic> json) {
     return FoodModel(
-      id: json['id'].toString(),
-      title: json['title'],
-      description: json['description'],
-      image: json['image'],
-      price: int.parse(json['price'].toString()),
-      fullDescription: json['fullDescription'],
-    );
+        id: json['id'].toString(),
+        title: json['title'],
+        description: json['description'],
+        image: json['image'],
+        price: int.parse(json['price'].toString()),
+        fullDescription: json['fullDescription'],
+        favorite: json['favorite'].toString());
   }
 
   Map<String, dynamic> toMap() {
@@ -40,6 +44,7 @@ class FoodModel {
     map['fullDescription'] = fullDescription;
     map['price'] = price;
     map['image_file'] = imageFile;
+    map['userId'] = userId;
 
     return map;
   }

@@ -43,4 +43,23 @@ public class FoodResponse {
       }
     }
   }
+
+  public static FoodResponse getInstance(Foods foods) {
+    FoodResponse dto = new FoodResponse();
+    if(foods != null) {
+      try {
+        dto.setId(foods.getId());
+        dto.setDescription(foods.getDescription());
+        dto.setFavorite(foods.getFavorite());
+        dto.setFullDescription(foods.getFullDescription());
+        dto.setImage(foods.getImage());
+        dto.setPrice(foods.getPrice());
+        dto.setTitle(foods.getTitle());
+        return dto;
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    return null;
+  }
 }

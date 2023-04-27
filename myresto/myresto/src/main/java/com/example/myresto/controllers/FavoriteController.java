@@ -36,21 +36,15 @@ public class FavoriteController {
   @Autowired
   private FoodRepository foodRepository;
   
-  @PostMapping("")
-  public ResponseEntity<ResponAPI<FavoriteResponse>> createCart(@ModelAttribute FavoriteRequest body) {
-    ResponAPI<FavoriteResponse> responAPI = new ResponAPI<>();
+  public boolean createFavorite(FavoriteRequest body) {
     Optional<Foods> fOptional = foodRepository.findById(body.getFoodId());
     if (!fOptional.isPresent()) {
-      responAPI.setMessage("Data Food tidak ditemukan!");
-      responAPI.setStatus(HttpStatus.BAD_REQUEST.value());
-      return ResponseEntity.badRequest().body(responAPI);
+      return false;
     }
 
     Optional<Users> uOptional = userRepository.findById(body.getUserId());
     if (!uOptional.isPresent()) {
-      responAPI.setMessage("Data User tidak ditemukan!");
-      responAPI.setStatus(HttpStatus.BAD_REQUEST.value());
-      return ResponseEntity.badRequest().body(responAPI);
+      return false;
     }
 
     try {
@@ -59,25 +53,16 @@ public class FavoriteController {
       Users users = uOptional.get();
       Optional<Favorite> cOptional = repository.findByFoodAndUsers(foods, users);
       if (cOptional.isPresent()) {
-        responAPI.setMessage("Data Sudah dimasukan ke cart!");
-        responAPI.setStatus(HttpStatus.BAD_REQUEST.value());
-        return ResponseEntity.badRequest().body(responAPI);
+       return false;
       }
   
-     favorite.setFavorite(true);
+     favorite.setFavorite(false);
      favorite.setFood(foods);
      favorite.setUsers(users);
      repository.save(favorite);
-
-      FavoriteResponse favResponse = FavoriteResponse.fromCart(favorite);
-      responAPI.setData(favResponse);
-      responAPI.setMessage("Successfully favorite food");
-      responAPI.setStatus(HttpStatus.OK.value());
-      return ResponseEntity.ok(responAPI);
+      return true;
     } catch (Exception e) {
-      responAPI.setMessage(e.getMessage());
-      responAPI.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responAPI);
+      return false;
     }
   }
 

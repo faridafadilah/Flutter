@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myresto/ui/screens/cart_screen.dart';
-import 'package:myresto/ui/screens/home_screen.dart';
-import 'package:myresto/ui/screens/profile_screen.dart';
+import 'package:myresto/ui/screens/foods/home_screen.dart';
+import 'package:myresto/ui/screens/profile/profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override

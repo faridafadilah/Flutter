@@ -123,6 +123,7 @@ public class CartController {
         cartResponse.setQuantity(cart.getQuantity());
         cartResponse.setPhotoFood(cart.getFood().getImage());
         cartResponse.setId(cart.getId());
+        cartResponse.setFoodId(cart.getFood().getId());
         cartResponses.add(cartResponse);
       });
       responAPI.setData(cartResponses);

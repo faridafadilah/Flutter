@@ -47,4 +47,11 @@ public class History {
   @JoinColumn(name = "food_id")
   @JsonManagedReference
   private Foods food;
+
+  @ManyToOne
+  @JsonManagedReference
+  @JoinColumn(name = "user_id")
+  private Users users;
+
+  private long count;
 }

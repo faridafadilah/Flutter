@@ -8,6 +8,7 @@ import 'package:myresto/core/models/foods_mdl.dart';
 import 'package:myresto/core/services/food_services.dart';
 import 'package:myresto/core/utils/toast_utils.dart';
 import 'package:myresto/ui/widgets/custom_textfield.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddScreen extends StatelessWidget {
   @override
@@ -35,6 +36,9 @@ class _AddBodyState extends State<AddBody> {
   var fullDescriptionControlelr = TextEditingController();
   var priceController = TextEditingController();
 
+  String id = '';
+  String username, email, pathPhoto;
+
   void imagePick() async {
     var _image = await ImagePicker.pickImage(source: ImageSource.gallery);
     if (_image != null) {
@@ -42,6 +46,12 @@ class _AddBodyState extends State<AddBody> {
         image = File(_image.path);
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getPref();
   }
 
   void addMakanan() async {
@@ -57,7 +67,8 @@ class _AddBodyState extends State<AddBody> {
           price: int.parse(priceController.text),
           fullDescription: fullDescriptionControlelr.text,
           id: '$_counter',
-          imageFile: await MultipartFile.fromFile(image.path));
+          imageFile: await MultipartFile.fromFile(image.path),
+          userId: int.parse(id));
       ToastUtils.show("Membuat Makanan");
 
       FoodResponse response = await FoodsServices.createFood(foodModel);
@@ -72,6 +83,20 @@ class _AddBodyState extends State<AddBody> {
       }
     } else {
       ToastUtils.show("Field not empty!");
+    }
+  }
+
+  getPref() async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+
+    setState(() {
+      id = pref.getString('id');
+      username = pref.getString('username');
+    });
+
+    if (username == null) {
+      Navigator.pushNamedAndRemoveUntil(
+          context, "/login", (Route<dynamic> routes) => false);
     }
   }
 

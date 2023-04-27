@@ -13,13 +13,15 @@ public class CartResponse {
   private int price;
   private long quantity;
   private String photoFood;
+  private long foodId;
 
-  public CartResponse(String title, int price, long quantity, String photoFood, long id) {
+  public CartResponse(String title, int price, long quantity, String photoFood, long id, long foodId) {
     this.title = title;
     this.price = price;
     this.quantity = quantity;
     this.photoFood = photoFood;
     this.id = id;
+    this.foodId = foodId;
   }
 
   public CartResponse() {}
@@ -30,6 +32,7 @@ public class CartResponse {
     long quantity = cart.getQuantity();
     String photoFood = cart.getFood().getImage();
     long id = cart.getId();
-    return new CartResponse(title, price, quantity, photoFood, id);
+    long foodId = cart.getFood().getId();
+    return new CartResponse(title, price, quantity, photoFood, id, foodId);
   }
 }

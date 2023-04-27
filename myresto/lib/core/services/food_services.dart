@@ -5,11 +5,23 @@ import 'package:myresto/core/models/foods_mdl.dart';
 class FoodsServices {
   static Dio dio = new Dio();
 
-  static Future<List<FoodModel>> getAll() async {
-    var response = await dio.get(Endpoint.baseFoods,
+  static Future<List<FoodModel>> getAll(
+      int page,
+      int limit,
+      double minPrice,
+      double maxPrice,
+      bool isFavorite,
+      double minRating,
+      double maxRating,
+      String title) async {
+    int minPrices = minPrice.toInt();
+    int maxPrices = maxPrice.toInt();
+    var response = await dio.get(
+        Endpoint.baseFoods +
+            "?${title != null ? "search=$title" : ""}&&page=${page}&&limit=${limit}&&minPrice=${minPrices}&&maxPrice=${maxPrices}&&isFavorite=${isFavorite}&&minRating=${minRating}&&maxRating=${maxRating}",
         options: Options(headers: {"Accept": "application/json"}));
     var _foodData = <FoodModel>[];
-    response.data["data"].forEach((value) {
+    response.data["data"]["content"].forEach((value) {
       _foodData.add(FoodModel.fromJson(value));
     });
     return _foodData; // tambahkan baris ini untuk mengembalikan data
@@ -39,5 +51,12 @@ class FoodsServices {
         options: Options(headers: {"Accept": "application/json"}));
 
     return FoodResponse.fromJson(response.data);
+  }
+
+  static Future<FoodModel> getById(String id) async {
+    int idFood = int.tryParse(id);
+    var response = await dio.get(Endpoint.baseFoods + "/${idFood}",
+        options: Options(headers: {"Accept": "application/json"}));
+    return FoodModel.fromJson(response.data["data"]);
   }
 }

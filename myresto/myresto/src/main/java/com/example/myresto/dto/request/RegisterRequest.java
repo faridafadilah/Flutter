@@ -1,7 +1,5 @@
 package com.example.myresto.dto.request;
 
-import java.util.Date;
-
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;

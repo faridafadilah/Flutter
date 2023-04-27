@@ -5,11 +5,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -25,10 +34,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.example.myresto.base.ResponAPI;
+import com.example.myresto.dto.request.FavoriteRequest;
 import com.example.myresto.dto.request.FoodRequest;
 import com.example.myresto.dto.response.FoodResponse;
 import com.example.myresto.models.Foods;
 import com.example.myresto.repository.FoodRepository;
+import com.example.myresto.specification.FoodSpecification;
 
 @RestController
 @RequestMapping("/api/foods")
@@ -36,66 +47,55 @@ public class FoodController {
   @Autowired
   private FoodRepository repository;
 
+  @Autowired
+  private FavoriteController favoriteController;
+
   private final Path root = Paths.get("./imageFood");
 
-  @GetMapping("")
-  public ResponseEntity<ResponAPI<List<FoodResponse>>> getAll() {
-    try{
-      List<FoodResponse> foods = new ArrayList<>();
-      repository.findAll().forEach(food -> {
-        FoodResponse foodResponse = new FoodResponse();
-        foodResponse.setId(food.getId());
-        foodResponse.setDescription(food.getDescription());
-        foodResponse.setFullDescription(food.getFullDescription());
-        foodResponse.setImage(food.getImage());
-        foodResponse.setPrice(food.getPrice());
-        foodResponse.setTitle(food.getTitle());
-        foodResponse.setFavorite(food.getFavorite());
-        foods.add(foodResponse);
-      });
-      ResponAPI<List<FoodResponse>> responAPI = new ResponAPI<>();
-      responAPI.setData(foods);
-      responAPI.setStatus(200);
-      responAPI.setMessage("Successfully get foods");
-      return ResponseEntity.status(HttpStatus.OK).body(responAPI);
-    } catch (Exception e) {
-      return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  // try {
-  //   ResponAPI<List<FavoriteResponse>> responAPI = new ResponAPI<>();
-  //   Optional<Users> uOptional = userRepository.findById(id);
-  //   if (!uOptional.isPresent()) {
-  //     responAPI.setMessage("Data User tidak ditemukan!");
-  //     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responAPI);
+  // @GetMapping("")
+  // public ResponseEntity<ResponAPI<List<FoodResponse>>> getAll(@RequestParam(required = false) String title) {
+  //   try {
+  //     List<FoodResponse> foods = new ArrayList<>();
+  //     if (title != null) {
+  //       repository.findByTitleContaining(title).forEach(food -> {
+  //         FoodResponse foodResponse = new FoodResponse();
+  //         foodResponse.setId(food.getId());
+  //         foodResponse.setDescription(food.getDescription());
+  //         foodResponse.setFullDescription(food.getFullDescription());
+  //         foodResponse.setImage(food.getImage());
+  //         foodResponse.setPrice(food.getPrice());
+  //         foodResponse.setTitle(food.getTitle());
+  //         foodResponse.setFavorite(food.getFavorite());
+  //         foods.add(foodResponse);
+  //       });
+  //     } else {
+  //       repository.findAll().forEach(food -> {
+  //         FoodResponse foodResponse = new FoodResponse();
+  //         foodResponse.setId(food.getId());
+  //         foodResponse.setDescription(food.getDescription());
+  //         foodResponse.setFullDescription(food.getFullDescription());
+  //         foodResponse.setImage(food.getImage());
+  //         foodResponse.setPrice(food.getPrice());
+  //         foodResponse.setTitle(food.getTitle());
+  //         foodResponse.setFavorite(food.getFavorite());
+  //         foods.add(foodResponse);
+  //       });
+  //     }
+  //     ResponAPI<List<FoodResponse>> responAPI = new ResponAPI<>();
+  //     responAPI.setData(foods);
+  //     responAPI.setStatus(200);
+  //     responAPI.setMessage("Successfully get foods");
+  //     return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+  //   } catch (Exception e) {
+  //     return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
   //   }
-  //   List<FavoriteResponse> favoriteResponses = new ArrayList<>();
-  //   repository.findAllByUsersAndFavorite(uOptional.get(), true).forEach(cart -> {
-  //     FavoriteResponse favoriteResponse = new FavoriteResponse();
-  //    favoriteResponse.setIdFavorite(cart.getId());
-  //    favoriteResponse.setFoodId(cart.getFood().getId());
-  //    favoriteResponse.setDescription(cart.getFood().getDescription());
-  //    favoriteResponse.setPhotoFood(cart.getFood().getImage());
-  //    favoriteResponse.setPrice(cart.getFood().getPrice());
-  //    favoriteResponse.setTitle(cart.getFood().getTitle());
-  //    favoriteResponse.setFavorite(cart.getFavorite());
-  //    favoriteResponses.add(favoriteResponse);
-  //   });
-  //   responAPI.setData(favoriteResponses);
-
-  //   responAPI.setStatus(200);
-  //   responAPI.setMessage("Successfully get Cart");
-  //   return ResponseEntity.status(HttpStatus.OK).body(responAPI);
-  // } catch (Exception e) {
-  //   return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
   // }
 
   @GetMapping("/{id}")
   public ResponseEntity<ResponAPI<Foods>> getById(@PathVariable("id") long id) {
     Optional<Foods> foods = repository.findById(id);
     ResponAPI<Foods> responAPI = new ResponAPI<>();
-    if(foods.isPresent()) {
+    if (foods.isPresent()) {
       responAPI.setData(foods.get());
       responAPI.setStatus(200);
       responAPI.setMessage("Successfully get foods");
@@ -123,7 +123,7 @@ public class FoodController {
       @RequestParam("image_file") MultipartFile file) {
     try {
       ResponAPI<Foods> responAPI = new ResponAPI<>();
-      if(!file.isEmpty()){
+      if (!file.isEmpty()) {
         System.out.println("image ada");
       } else {
         System.out.println("image no present");
@@ -131,6 +131,13 @@ public class FoodController {
       String image = saveImage(file);
       Foods foods = new Foods(body.getTitle(), body.getDescription(), body.getDescription(), body.getPrice(), image);
       repository.save(foods);
+
+      FavoriteRequest favreq = new FavoriteRequest();
+      favreq.setFavorite(false);
+      favreq.setFoodId(foods.getId());
+      favreq.setUserId(body.getUserId());
+      favoriteController.createFavorite(favreq);
+
       responAPI.setData(foods);
       responAPI.setMessage("Successfully create foodds");
       responAPI.setStatus(200);
@@ -141,12 +148,14 @@ public class FoodController {
   }
 
   @PostMapping("/{id}")
-  public ResponseEntity<ResponAPI<Foods>> update(@ModelAttribute FoodRequest body, @RequestParam(value = "image_file", required = false) MultipartFile file, @PathVariable("id") long id) throws IOException {
+  public ResponseEntity<ResponAPI<Foods>> update(@ModelAttribute FoodRequest body,
+      @RequestParam(value = "image_file", required = false) MultipartFile file, @PathVariable("id") long id)
+      throws IOException {
     Optional<Foods> foods = repository.findById(id);
     ResponAPI<Foods> responAPI = new ResponAPI<>();
-    if(foods.isPresent()) {
+    if (foods.isPresent()) {
       Foods food = foods.get();
-      if(file != null) {
+      if (file != null) {
         String imageOld = food.getImage();
         String image = saveImage(file);
         food.setImage(image);
@@ -174,7 +183,8 @@ public class FoodController {
     String uniqueFilename = UUID.randomUUID().toString() + ext;
     Path filePath = this.root.resolve(uniqueFilename);
     Files.copy(image.getInputStream(), filePath);
-    String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageFood/").path(uniqueFilename).toUriString();
+    String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageFood/").path(uniqueFilename)
+        .toUriString();
     return url;
   }
 
@@ -184,5 +194,38 @@ public class FoodController {
     String[] separatedPath = path.split("/");
     Path oldFile = root.resolve(separatedPath[separatedPath.length - 1]);
     Files.deleteIfExists(oldFile);
+  }
+
+  @GetMapping("")
+  public ResponseEntity<ResponAPI<Page<FoodResponse>>> getAllFoods(
+      @RequestParam(required = false) Integer minPrice,
+      @RequestParam(required = false) Integer maxPrice,
+      @RequestParam(required = false) Boolean isFavorite,
+      @RequestParam(required = false) Double minRating,
+      @RequestParam(required = false) Double maxRating,
+      @RequestParam(required = false) String search,
+      @RequestParam(required = false) Integer page,
+      @RequestParam(required = false) Integer limit
+      ) {
+    try {
+      Pageable pageable = PageRequest.of(page, limit, Sort.Direction.DESC, "id");
+      
+      Specification<Foods> spec = FoodSpecification.filterByCriteria(search, minPrice, maxPrice, minRating, maxRating, isFavorite);
+      Page<Foods> filteredFoods = repository.findAll(spec, pageable);
+      List<FoodResponse> responses = filteredFoods.getContent().stream().map(FoodResponse::getInstance).collect(Collectors.toList());
+      Page<FoodResponse> data = new PageImpl<>(responses, pageable, filteredFoods.getTotalElements());
+      ResponAPI<Page<FoodResponse>> responAPI = new ResponAPI<>();
+      responAPI.setData(data);
+      responAPI.setMessage("Successfully get foods");
+      responAPI.setStatus(200);
+      return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+    } catch (Exception e) {
+      ResponAPI<Page<FoodResponse>> responAPI = new ResponAPI<>();
+      responAPI.setData(null);
+      responAPI.setMessage(e.getMessage());
+      responAPI.setStatus(500);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(responAPI);
+    }
   }
 }

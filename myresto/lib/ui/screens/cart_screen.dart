@@ -1,6 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:myresto/core/models/cart_mdl.dart';
+import 'package:myresto/core/models/history_mdl.dart';
+import 'package:myresto/core/services/cart_service.dart';
+import 'package:myresto/core/services/history_service.dart';
+import 'package:myresto/core/utils/toast_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CartScreen extends StatelessWidget {
   @override
@@ -28,35 +32,81 @@ class CartBody extends StatefulWidget {
 }
 
 class _CartBodyState extends State<CartBody> {
-  List<CartModel> cartList;
+  List<CartModel> cartList = [];
   List<TextEditingController> controller;
   int totalPrice = 0;
+  String idUser = '';
+  String username, email, pathPhoto;
+
+  @override
+  void initState() {
+    super.initState();
+    getPref();
+  }
+
+  getPref() async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+
+    setState(() {
+      idUser = pref.getString('id');
+      username = pref.getString('username');
+      email = pref.getString('email');
+      pathPhoto = pref.getString('foto');
+    });
+
+    if (username == null) {
+      Navigator.pushNamedAndRemoveUntil(
+          context, "/login", (Route<dynamic> routes) => false);
+    } else {
+      initData();
+    }
+  }
 
   //menghitung total harga
   void calculateTotal() {
     setState(() {
       totalPrice = 0;
     });
-    for (int i = 0; i < cartList.length; i++) {
-      int quantity = int.parse(controller[i].text);
-      setState(() {
-        totalPrice += cartList[i].price * quantity;
-      });
+    if (cartList != null) {
+      // add null check
+      for (int i = 0; i < cartList.length; i++) {
+        int quantity = int.parse(controller[i].text);
+        setState(() {
+          totalPrice += cartList[i].price * quantity;
+        });
+      }
     }
   }
 
-  // menambah quantity
-  void increaseQuantity(int index) {
-    int oldValue = int.parse(controller[index].text);
-    setState(() {
-      controller[index].text = (oldValue + 1).toString();
-      cartList[index].quantity += 1;
-    });
-    calculateTotal();
+  void _deleteCartItem(int index) async {
+    try {
+      await CartServices.deleteCart(cartList[index].id.toString());
+      setState(() {
+        cartList.removeAt(index);
+        controller.removeAt(index);
+      });
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pushNamedAndRemoveUntil(
+            context, "/carts", (Route<dynamic> routes) => false);
+      });
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  void _updateToCart(int quantity, String id) async {
+    CartRequest cartRequest = CartRequest(
+      quantity: quantity,
+    );
+
+    CartResponse response = await CartServices.updateCart(cartRequest, id);
+    if (response != true) {
+      print("Salahh");
+    }
   }
 
   // mengurangi quantity
-  void decreaseQuantity(int index) {
+  void decreaseQuantity(int index) async {
     int oldValue = int.parse(controller[index].text);
 
     //jika jumlah quantity 0 tidak bisa dikurangi
@@ -65,30 +115,75 @@ class _CartBodyState extends State<CartBody> {
         controller[index].text = (oldValue - 1).toString();
         cartList[index].quantity -= 1;
       });
+      _updateToCart(
+          cartList[index].quantity, cartList[index].idFood.toString());
+
+      if (cartList[index].quantity == 0) {
+        cartList.removeAt(index);
+        controller.removeAt(index);
+      }
     }
+
+    if (controller[index].text == '0' && cartList[index].quantity == 0) {
+      _deleteCartItem(index);
+    }
+
+    calculateTotal();
+  }
+
+  // menambah quantity
+  void increaseQuantity(int index) async {
+    int oldValue = int.parse(controller[index].text);
+    setState(() {
+      controller[index].text = (oldValue + 1).toString();
+      cartList[index].quantity += 1;
+    });
+    _updateToCart(cartList[index].quantity, cartList[index].idFood.toString());
     calculateTotal();
   }
 
   //inisialisasi controller list
   void initController() {
     controller = new List<TextEditingController>();
-    for (int i = 0; i < cartList.length; i++) {
-      controller.add(TextEditingController());
-      controller[i].text = cartList[i].quantity.toString();
+    if (cartList != null) {
+      for (int i = 0; i < cartList.length; i++) {
+        controller.add(TextEditingController());
+        controller[i].text = cartList[i].quantity.toString();
+      }
     }
   }
 
   //inisialisasi data list
-  void initData() {
-    cartList = CartModel.dummyData();
+  void initData() async {
+    try {
+      cartList = await CartServices.getAll(
+          idUser.toString()); // replace 1 with user ID
+      initController();
+      calculateTotal();
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    this.initData();
-    this.initController();
-    this.calculateTotal();
+  void _addHistory(
+      String foodId, String userId, int total, int count, int index) async {
+    print("${foodId}, ${userId}, ${total}, ${count}");
+    HistoryRequest historyRequest = HistoryRequest(
+        count: count,
+        foodId: int.parse(foodId),
+        userId: int.parse(userId),
+        totalPrice: total);
+    HistoryResponse response = await HistoryService.addHistory(historyRequest);
+    if (response.status == 201) {
+      ToastUtils.show(response.message);
+      _deleteCartItem(index);
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pushNamedAndRemoveUntil(
+            context, "/history", (Route<dynamic> routes) => false);
+      });
+    } else {
+      ToastUtils.show(response.message);
+    }
   }
 
   @override
@@ -115,119 +210,167 @@ class _CartBodyState extends State<CartBody> {
           SizedBox(
             height: 10,
           ),
-          _itemList()
+          _itemList(),
         ],
       ),
     );
   }
 
   Widget _itemList() {
-    return ListView.builder(
-      itemCount: cartList.length,
-      shrinkWrap: true,
-      itemBuilder: (context, index) {
-        var cart = cartList[index];
-        return Card(
-          elevation: 2,
-          child: InkWell(
-            onTap: () {},
-            child: Padding(
-              padding: EdgeInsets.all(15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Icon(Icons.fastfood, size: 30),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      child: Column(children: <Widget>[
+        ListView.builder(
+          itemCount: cartList?.length ?? 0,
+          shrinkWrap: true,
+          itemBuilder: (context, index) {
+            var cart = cartList[index];
+            return Column(
+              children: <Widget>[
+                Card(
+                  elevation: 2,
+                  child: InkWell(
+                    onTap: () {},
+                    child: Padding(
+                      padding: EdgeInsets.all(15),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Text(
-                            cart.title,
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 15),
+                          Row(
+                            children: <Widget>[
+                              Container(
+                                width: 64,
+                                height: 64,
+                                child: Image.network(
+                                  cart.photoFood,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    cart.title,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15),
+                                  ),
+                                  SizedBox(height: 5),
+                                  Text(
+                                    "${cart.quantity.toString()} x Rp ${cart.price.toString()}",
+                                    style: TextStyle(
+                                        fontSize: 13, color: Colors.black54),
+                                  )
+                                ],
+                              )
+                            ],
                           ),
-                          SizedBox(height: 5),
-                          Text(
-                            "${cart.quantity.toString()} x Rp ${cart.price.toString()}",
-                            style:
-                                TextStyle(fontSize: 13, color: Colors.black54),
-                          )
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: <Widget>[
+                              SizedBox(height: 45),
+                              Text(
+                                "Rp ${(cart.price * cart.quantity).toString()}",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Container(
+                                    width: 32,
+                                    height: 20,
+                                    child: RaisedButton(
+                                      color: Colors.red,
+                                      onPressed: () => decreaseQuantity(index),
+                                      padding: EdgeInsets.all(0),
+                                      child: Icon(
+                                        Icons.minimize,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Container(
+                                    width: 32,
+                                    height: 20,
+                                    child: TextField(
+                                      readOnly: true,
+                                      controller: controller[index],
+                                      textInputAction: TextInputAction.go,
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      decoration: InputDecoration(
+                                          hintText: "0",
+                                          contentPadding:
+                                              EdgeInsets.only(bottom: 10)),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Container(
+                                    width: 32,
+                                    height: 20,
+                                    child: RaisedButton(
+                                      color: Colors.green,
+                                      onPressed: () => increaseQuantity(index),
+                                      padding: EdgeInsets.all(0),
+                                      child: Icon(
+                                        Icons.add,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                  height:
+                                      10), // tambahan untuk memberikan jarak antara dua widget
+                            ],
+                          ),
                         ],
-                      )
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      SizedBox(height: 45),
-                      Text(
-                        "Rp ${(cart.price * cart.quantity).toString()}",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black54,
-                        ),
                       ),
-                      SizedBox(height: 5),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Container(
-                            width: 32,
-                            height: 20,
-                            child: RaisedButton(
-                              color: Colors.red,
-                              onPressed: () => decreaseQuantity(index),
-                              padding: EdgeInsets.all(0),
-                              child: Icon(
-                                Icons.minimize,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 5),
-                          Container(
-                            width: 32,
-                            height: 20,
-                            child: TextField(
-                              readOnly: true,
-                              controller: controller[index],
-                              textInputAction: TextInputAction.go,
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                  hintText: "0",
-                                  contentPadding: EdgeInsets.only(bottom: 10)),
-                            ),
-                          ),
-                          SizedBox(width: 5),
-                          Container(
-                            width: 32,
-                            height: 20,
-                            child: RaisedButton(
-                              color: Colors.green,
-                              onPressed: () => increaseQuantity(index),
-                              padding: EdgeInsets.all(0),
-                              child: Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          )
-                        ],
-                      )
-                    ],
-                  )
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+                    ),
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.all(10),
+                  width: MediaQuery.of(context).size.width,
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: () => _addHistory(cart.idFood, idUser,
+                        (cart.price * cart.quantity), cart.quantity, index),
+                    style: ElevatedButton.styleFrom(
+                      primary: Colors.pinkAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          'Checkout Rp:',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        Text(
+                          (cart.price * cart.quantity).toString(),
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ]),
     );
   }
 }

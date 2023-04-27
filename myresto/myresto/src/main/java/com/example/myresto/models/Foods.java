@@ -55,6 +55,10 @@ public class Foods {
   @OneToMany(mappedBy = "food")
   private List<Favorite> favorite;
 
+  @JsonBackReference
+  @OneToMany(mappedBy = "food")
+  private List<Ulasan> ulasan;
+
   public boolean isFavorite() {
     if (favorite == null || favorite.isEmpty()) {
         return false;
