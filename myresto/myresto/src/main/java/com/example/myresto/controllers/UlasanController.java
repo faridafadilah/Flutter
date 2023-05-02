@@ -2,7 +2,9 @@ package com.example.myresto.controllers;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,35 +108,46 @@ public class UlasanController {
   }
 
   @GetMapping("/all/{id}")
-  public ResponseEntity<ResponAPI<List<UlasanResponse>>> getAll(@PathVariable("id") long id) {
+public ResponseEntity<ResponAPI<List<UlasanResponse>>> getAll(@PathVariable("id") long id) {
     try {
-      ResponAPI<List<UlasanResponse>> responAPI = new ResponAPI<>();
-      Optional<Foods> uOptional = foodRepository.findById(id);
-      if (!uOptional.isPresent()) {
-        responAPI.setMessage("Data User tidak ditemukan!");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responAPI);
-      }
-      List<UlasanResponse> ulasanResponses = new ArrayList<>();
-      repository.findAllByFood(uOptional.get()).forEach(ulas -> {
-        UlasanResponse response = new UlasanResponse();
-        response.setId(ulas.getId());
-        response.setFoodId(ulas.getFood().getId());
-        response.setUserId(ulas.getUsers().getId());
-        response.setTanggal(ulas.getCreatedAt().toString());
-        response.setComment(ulas.getComment());
-        response.setRating(ulas.getRating());
-        response.setUsername(ulas.getUsers().getNama());
-        ulasanResponses.add(response);
-      });
+        ResponAPI<List<UlasanResponse>> responAPI = new ResponAPI<>();
+        Optional<Foods> uOptional = foodRepository.findById(id);
+        if (!uOptional.isPresent()) {
+            responAPI.setMessage("Data User tidak ditemukan!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responAPI);
+        }
+        List<UlasanResponse> ulasanResponses = new ArrayList<>();
+        Map<String, Double> userRatingMap = new HashMap<>();
+        repository.findAllByFood(uOptional.get()).forEach(ulas -> {
+            String username = ulas.getUsers().getNama();
+            Double rating = ulas.getRating();
+            if (userRatingMap.containsKey(username)) {
+                Double currentRating = userRatingMap.get(username);
+                if (currentRating > rating) {
+                    userRatingMap.put(username, rating);
+                }
+            } else {
+                userRatingMap.put(username, rating);
+                UlasanResponse response = new UlasanResponse();
+                response.setId(ulas.getId());
+                response.setFoodId(ulas.getFood().getId());
+                response.setUserId(ulas.getUsers().getId());
+                response.setTanggal(ulas.getCreatedAt().toString());
+                response.setComment(ulas.getComment());
+                response.setRating(ulas.getRating());
+                response.setUsername(username);
+                ulasanResponses.add(response);
+            }
+        });
 
-      responAPI.setData(ulasanResponses);
-      responAPI.setStatus(200);
-      responAPI.setMessage("Successfully get ulasan");
-      return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+        responAPI.setData(ulasanResponses);
+        responAPI.setStatus(200);
+        responAPI.setMessage("Successfully get ulasan");
+        return ResponseEntity.status(HttpStatus.OK).body(responAPI);
     } catch (Exception e) {
-      return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-  }
+}
 
   @GetMapping("/{id}")
   public ResponseEntity<ResponAPI<UlasanResponse>> getById(@PathVariable("id") long historyId) {

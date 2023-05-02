@@ -45,11 +45,7 @@ public interface FoodSpecification extends Specification<Foods> {
       }
 
       if (isFavorite != null) {
-        if (isFavorite) {
-          predicates.add(builder.isNotEmpty(root.get("favorite")));
-        } else {
-          predicates.add(builder.isEmpty(root.get("favorite")));
-        }
+        predicates.add(builder.equal(root.get("favorite").get("favorite"), isFavorite));
       }
 
       return builder.and(predicates.toArray(new Predicate[0]));

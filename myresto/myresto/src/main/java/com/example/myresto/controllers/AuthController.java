@@ -138,7 +138,7 @@ public class AuthController {
 
   @PostMapping("/profile/{id}")
   public ResponseEntity<ResponAPI<Users>> updateProfile(@ModelAttribute RegisterRequest req,
-      @RequestParam("image") MultipartFile file, @PathVariable("id") long id) {
+      @RequestParam(required = false, value = "image") MultipartFile file, @PathVariable("id") long id) {
     try {
       ResponAPI<Users> responAPI = new ResponAPI<>();
       Optional<Users> userOp = repository.findById(id);

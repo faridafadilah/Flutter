@@ -5,6 +5,16 @@ import 'package:myresto/core/models/foods_mdl.dart';
 class FoodsServices {
   static Dio dio = new Dio();
 
+  static Future<List<FoodModel>> getAllFoods() async {
+    var response = await dio.get(Endpoint.baseFoods + "/all",
+        options: Options(headers: {"Accept": "application/json"}));
+    var _favData = <FoodModel>[];
+    response.data["data"].forEach((value) {
+      _favData.add(FoodModel.fromJson(value));
+    });
+    return _favData;
+  }
+
   static Future<List<FoodModel>> getAll(
       int page,
       int limit,
@@ -18,7 +28,7 @@ class FoodsServices {
     int maxPrices = maxPrice.toInt();
     var response = await dio.get(
         Endpoint.baseFoods +
-            "?${title != null ? "search=$title" : ""}&&page=${page}&&limit=${limit}&&minPrice=${minPrices}&&maxPrice=${maxPrices}&&isFavorite=${isFavorite}&&minRating=${minRating}&&maxRating=${maxRating}",
+            "?${title != null ? "search=$title" : ""}&&page=${page}&&limit=${limit}&&isFavorite=${isFavorite}",
         options: Options(headers: {"Accept": "application/json"}));
     var _foodData = <FoodModel>[];
     response.data["data"]["content"].forEach((value) {

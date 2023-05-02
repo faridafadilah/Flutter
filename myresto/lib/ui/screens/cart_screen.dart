@@ -78,13 +78,9 @@ class _CartBodyState extends State<CartBody> {
     }
   }
 
-  void _deleteCartItem(int index) async {
+  void _deleteCartItem(String id) async {
     try {
-      await CartServices.deleteCart(cartList[index].id.toString());
-      setState(() {
-        cartList.removeAt(index);
-        controller.removeAt(index);
-      });
+      await CartServices.deleteCart(id.toString());
       Future.delayed(Duration(seconds: 1), () {
         Navigator.pushNamedAndRemoveUntil(
             context, "/carts", (Route<dynamic> routes) => false);
@@ -94,18 +90,31 @@ class _CartBodyState extends State<CartBody> {
     }
   }
 
-  void _updateToCart(int quantity, String id) async {
-    CartRequest cartRequest = CartRequest(
-      quantity: quantity,
-    );
+  void _updateToCart(int quantitys, String id) async {
+    print(quantitys);
 
-    CartResponse response = await CartServices.updateCart(cartRequest, id);
-    if (response != true) {
-      print("Salahh");
+    try {
+      CartRequest cartRequest = CartRequest(
+        quantity: quantitys,
+      );
+
+      CartResponse response = await CartServices.updateCart(cartRequest, id);
+      if (response != null) {
+        setState(() {
+          // jika update cart berhasil, ubah state quantity menjadi quantity yang baru
+          cartList
+              .firstWhere((cartItem) => cartItem.idFood.toString() == id)
+              .quantity = quantitys;
+        });
+      } else {
+        print("Update cart failed");
+      }
+    } catch (e) {
+      print(e.toString());
     }
   }
 
-  // mengurangi quantity
+// mengurangi quantity
   void decreaseQuantity(int index) async {
     int oldValue = int.parse(controller[index].text);
 
@@ -115,30 +124,36 @@ class _CartBodyState extends State<CartBody> {
         controller[index].text = (oldValue - 1).toString();
         cartList[index].quantity -= 1;
       });
-      _updateToCart(
-          cartList[index].quantity, cartList[index].idFood.toString());
+      _updateToCart(cartList[index].quantity, cartList[index].id.toString());
+    }
+    if (cartList[index].quantity == 0) {
+      _deleteCartItem(cartList[index].id.toString());
+      cartList.removeAt(index);
+      controller.removeAt(index);
+    }
 
-      if (cartList[index].quantity == 0) {
+    if (cartList[index].quantity == 0) {
+      if (index >= 0 && index < cartList.length && index < controller.length) {
+        _deleteCartItem(cartList[index].id.toString());
         cartList.removeAt(index);
         controller.removeAt(index);
       }
     }
 
-    if (controller[index].text == '0' && cartList[index].quantity == 0) {
-      _deleteCartItem(index);
-    }
-
     calculateTotal();
   }
 
-  // menambah quantity
+// menambah quantity
   void increaseQuantity(int index) async {
     int oldValue = int.parse(controller[index].text);
+
     setState(() {
       controller[index].text = (oldValue + 1).toString();
       cartList[index].quantity += 1;
     });
-    _updateToCart(cartList[index].quantity, cartList[index].idFood.toString());
+
+    _updateToCart(cartList[index].quantity, cartList[index].id.toString());
+
     calculateTotal();
   }
 
@@ -153,7 +168,6 @@ class _CartBodyState extends State<CartBody> {
     }
   }
 
-  //inisialisasi data list
   void initData() async {
     try {
       cartList = await CartServices.getAll(
@@ -176,7 +190,7 @@ class _CartBodyState extends State<CartBody> {
     HistoryResponse response = await HistoryService.addHistory(historyRequest);
     if (response.status == 201) {
       ToastUtils.show(response.message);
-      _deleteCartItem(index);
+      _deleteCartItem(cartList[index].id.toString());
       Future.delayed(Duration(seconds: 1), () {
         Navigator.pushNamedAndRemoveUntil(
             context, "/history", (Route<dynamic> routes) => false);

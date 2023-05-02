@@ -38,7 +38,9 @@ import com.example.myresto.dto.request.FavoriteRequest;
 import com.example.myresto.dto.request.FoodRequest;
 import com.example.myresto.dto.response.FoodResponse;
 import com.example.myresto.models.Foods;
+import com.example.myresto.models.Ulasan;
 import com.example.myresto.repository.FoodRepository;
+import com.example.myresto.repository.UlasanRepository;
 import com.example.myresto.specification.FoodSpecification;
 
 @RestController
@@ -50,59 +52,80 @@ public class FoodController {
   @Autowired
   private FavoriteController favoriteController;
 
+  @Autowired
+  private UlasanRepository ulasanRepository;
+
   private final Path root = Paths.get("./imageFood");
 
-  // @GetMapping("")
-  // public ResponseEntity<ResponAPI<List<FoodResponse>>> getAll(@RequestParam(required = false) String title) {
-  //   try {
-  //     List<FoodResponse> foods = new ArrayList<>();
-  //     if (title != null) {
-  //       repository.findByTitleContaining(title).forEach(food -> {
-  //         FoodResponse foodResponse = new FoodResponse();
-  //         foodResponse.setId(food.getId());
-  //         foodResponse.setDescription(food.getDescription());
-  //         foodResponse.setFullDescription(food.getFullDescription());
-  //         foodResponse.setImage(food.getImage());
-  //         foodResponse.setPrice(food.getPrice());
-  //         foodResponse.setTitle(food.getTitle());
-  //         foodResponse.setFavorite(food.getFavorite());
-  //         foods.add(foodResponse);
-  //       });
-  //     } else {
-  //       repository.findAll().forEach(food -> {
-  //         FoodResponse foodResponse = new FoodResponse();
-  //         foodResponse.setId(food.getId());
-  //         foodResponse.setDescription(food.getDescription());
-  //         foodResponse.setFullDescription(food.getFullDescription());
-  //         foodResponse.setImage(food.getImage());
-  //         foodResponse.setPrice(food.getPrice());
-  //         foodResponse.setTitle(food.getTitle());
-  //         foodResponse.setFavorite(food.getFavorite());
-  //         foods.add(foodResponse);
-  //       });
-  //     }
-  //     ResponAPI<List<FoodResponse>> responAPI = new ResponAPI<>();
-  //     responAPI.setData(foods);
-  //     responAPI.setStatus(200);
-  //     responAPI.setMessage("Successfully get foods");
-  //     return ResponseEntity.status(HttpStatus.OK).body(responAPI);
-  //   } catch (Exception e) {
-  //     return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-  //   }
-  // }
+  @GetMapping("/all")
+  public ResponseEntity<ResponAPI<List<FoodResponse>>> getAll() {
+    try {
+      List<FoodResponse> foods = new ArrayList<>();
+      repository.findAll().forEach(food -> {
+        FoodResponse foodResponse = new FoodResponse();
+        foodResponse.setId(food.getId());
+        foodResponse.setDescription(food.getDescription());
+        foodResponse.setFullDescription(food.getFullDescription());
+        foodResponse.setImage(food.getImage());
+        foodResponse.setPrice(food.getPrice());
+        foodResponse.setTitle(food.getTitle());
+        foodResponse.setFavorite(food.getFavorite().getFavorite());
+        double averageRating = getAverageRatingByFoodId(food.getId());
+        foodResponse.setAverageRating(averageRating); 
+        foods.add(foodResponse);
+      });
+      ResponAPI<List<FoodResponse>> responAPI = new ResponAPI<>();
+      responAPI.setData(foods);
+      responAPI.setStatus(200);
+      responAPI.setMessage("Successfully get foods");
+      return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+    } catch (Exception e) {
+      return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   @GetMapping("/{id}")
-  public ResponseEntity<ResponAPI<Foods>> getById(@PathVariable("id") long id) {
+  public ResponseEntity<ResponAPI<FoodResponse>> getById(@PathVariable("id") long id) {
     Optional<Foods> foods = repository.findById(id);
-    ResponAPI<Foods> responAPI = new ResponAPI<>();
+    ResponAPI<FoodResponse> responAPI = new ResponAPI<>();
     if (foods.isPresent()) {
-      responAPI.setData(foods.get());
+      Foods food = foods.get();
+      FoodResponse foodResponse = new FoodResponse();
+      foodResponse.setId(food.getId());
+      foodResponse.setDescription(food.getDescription());
+      foodResponse.setFullDescription(food.getFullDescription());
+      foodResponse.setImage(food.getImage());
+      foodResponse.setPrice(food.getPrice());
+      foodResponse.setTitle(food.getTitle());
+      foodResponse.setFavorite(food.getFavorite().getFavorite());
+      double averageRating = getAverageRatingByFoodId(food.getId());
+      foodResponse.setAverageRating(averageRating); 
+      
+      responAPI.setData(foodResponse);
       responAPI.setStatus(200);
       responAPI.setMessage("Successfully get foods");
       return ResponseEntity.status(HttpStatus.OK).body(responAPI);
     } else {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
     }
+  }
+
+  private double getAverageRatingByFoodId(long foodId) {
+    Optional<Foods> food = repository.findById(foodId);
+    if (!food.isPresent()) {
+      return 0.0;
+    }
+
+    List<Ulasan> ulasanList = ulasanRepository.findAllByFood(food.get());
+    if (ulasanList.isEmpty()) {
+      return 0.0;
+    }
+
+    double totalRating = 0.0;
+    for (Ulasan ulasan : ulasanList) {
+      totalRating += ulasan.getRating();
+    }
+    return totalRating / ulasanList.size();
   }
 
   @DeleteMapping("/{id}")
@@ -205,14 +228,22 @@ public class FoodController {
       @RequestParam(required = false) Double maxRating,
       @RequestParam(required = false) String search,
       @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer limit
-      ) {
+      @RequestParam(required = false) Integer limit) {
     try {
       Pageable pageable = PageRequest.of(page, limit, Sort.Direction.DESC, "id");
-      
-      Specification<Foods> spec = FoodSpecification.filterByCriteria(search, minPrice, maxPrice, minRating, maxRating, isFavorite);
+
+      Specification<Foods> spec = FoodSpecification.filterByCriteria(search, minPrice, maxPrice, minRating, maxRating,
+          isFavorite);
       Page<Foods> filteredFoods = repository.findAll(spec, pageable);
-      List<FoodResponse> responses = filteredFoods.getContent().stream().map(FoodResponse::getInstance).collect(Collectors.toList());
+      List<FoodResponse> responses;
+      if (isFavorite != null && isFavorite) {
+        responses = filteredFoods.getContent().stream()
+            .filter(food -> food.getFavorite() != null && food.getFavorite().getFavorite())
+            .map(FoodResponse::getInstance)
+            .collect(Collectors.toList());
+      } else {
+        responses = filteredFoods.getContent().stream().map(FoodResponse::getInstance).collect(Collectors.toList());
+      }
       Page<FoodResponse> data = new PageImpl<>(responses, pageable, filteredFoods.getTotalElements());
       ResponAPI<Page<FoodResponse>> responAPI = new ResponAPI<>();
       responAPI.setData(data);

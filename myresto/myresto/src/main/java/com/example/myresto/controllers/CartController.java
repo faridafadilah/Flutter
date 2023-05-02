@@ -85,6 +85,8 @@ public class CartController {
   @PostMapping("/{id}")
   public ResponseEntity<ResponAPI<CartResponse>> updateCart(@ModelAttribute CartRequest body,
       @PathVariable("id") long id) {
+        System.out.println("quantity" + body.getQuantity());
+        System.out.println("id" + id);
     ResponAPI<CartResponse> responAPI = new ResponAPI<>();
     Optional<Cart> cOptional = repository.findById(id);
     if (!cOptional.isPresent()) {
@@ -138,6 +140,7 @@ public class CartController {
 
   @DeleteMapping("/{id}")
   public boolean deleteCart(@PathVariable("id") long id) {
+    System.out.println(id);
     Optional<Cart> uOptional = repository.findById(id);
     if (!uOptional.isPresent()) {
       return false;

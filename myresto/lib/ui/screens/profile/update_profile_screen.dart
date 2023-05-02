@@ -60,12 +60,14 @@ class _UpdateProfileState extends State<UpdateProfile> {
         "email": emailController.text,
         "nama": namaController.text,
         "nik": nikController.text,
-        "image": await MultipartFile.fromFile(image.path),
         "tanggalLahir": tanggalController.text.toString(),
         "alamat": alamatController.text,
         "jenisKelamin": jenisKelaminController.text,
         "kota": kotaController.text
       };
+      if (image != null) {
+        data["image"] = await MultipartFile.fromFile(image.path);
+      }
 
       ToastUtils.show("Mencoba Mendaftar..");
       var response = await AuthService.updateProfile(
@@ -110,6 +112,8 @@ class _UpdateProfileState extends State<UpdateProfile> {
       setState(() {
         image = File(_image.path);
       });
+    } else {
+      print('User did not pick an image.');
     }
   }
 

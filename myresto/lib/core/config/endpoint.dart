@@ -1,6 +1,6 @@
 class Endpoint {
   // static String _baseURL = "http://192.168.154.117:8080/api";
-  static String _baseURL = "http://10.10.102.175:8080/api";
+  static String _baseURL = "http://10.10.102.240:8080/api";
   static String baseFoods = "${_baseURL}/foods";
   static String baseCarts = "${_baseURL}/carts";
   static String register = "${_baseURL}/register";

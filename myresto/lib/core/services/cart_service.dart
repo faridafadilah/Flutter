@@ -26,11 +26,10 @@ class CartServices {
   }
 
   static Future<CartResponse> updateCart(
-      CartRequest CartModel, String id) async {
-    var foodData = CartModel.toMap();
-    foodData['_method'] = 'PUT';
+      CartRequest cartModel, String id) async {
+    var foodData = cartModel.toMap();
     int idCart = int.tryParse(id);
-    var response = await dio.post(Endpoint.baseCarts + "/${idCart}",
+    var response = await dio.post(Endpoint.baseCarts + "/${id}",
         data: FormData.fromMap(foodData),
         options: Options(headers: {"Accept": "application/json"}));
 
@@ -39,7 +38,7 @@ class CartServices {
 
   static Future<CartResponse> deleteCart(String id) async {
     int idCart = int.tryParse(id);
-    var response = await dio.delete(Endpoint.baseCarts + "/${idCart}",
+    var response = await dio.delete(Endpoint.baseCarts + "/${id}",
         options: Options(headers: {"Accept": "application/json"}));
 
     return CartResponse.fromJson(response.data);

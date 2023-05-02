@@ -10,6 +10,7 @@ class FoodModel {
   MultipartFile imageFile;
   String favorite;
   int userId;
+  double averageRating;
 
   //constructor
   FoodModel(
@@ -21,7 +22,8 @@ class FoodModel {
       this.fullDescription,
       this.imageFile,
       this.favorite,
-      this.userId});
+      this.userId,
+      this.averageRating});
 
   factory FoodModel.fromJson(Map<String, dynamic> json) {
     return FoodModel(
@@ -31,7 +33,8 @@ class FoodModel {
         image: json['image'],
         price: int.parse(json['price'].toString()),
         fullDescription: json['fullDescription'],
-        favorite: json['favorite'].toString());
+        favorite: json['favorite'].toString(),
+        averageRating: json['averageRating']);
   }
 
   Map<String, dynamic> toMap() {

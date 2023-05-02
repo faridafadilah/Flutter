@@ -8,6 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -52,17 +53,10 @@ public class Foods {
   private List<Cart> carts;
   
   @JsonBackReference
-  @OneToMany(mappedBy = "food")
-  private List<Favorite> favorite;
+  @OneToOne(mappedBy = "food")
+  private Favorite favorite;
 
   @JsonBackReference
   @OneToMany(mappedBy = "food")
   private List<Ulasan> ulasan;
-
-  public boolean isFavorite() {
-    if (favorite == null || favorite.isEmpty()) {
-        return false;
-    }
-    return true;
-  }
 }

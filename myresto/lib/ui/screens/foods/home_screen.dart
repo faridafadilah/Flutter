@@ -105,7 +105,7 @@ class _ListFoodState extends State<ListFood> {
       Navigator.pushNamedAndRemoveUntil(
           context, "/login", (Route<dynamic> routes) => false);
     } else {
-      loadData();
+      firstLoad();
       _scrollController.addListener(_scrollListener);
     }
   }
@@ -125,6 +125,27 @@ class _ListFoodState extends State<ListFood> {
     }
   }
 
+  void firstLoad() async {
+    try {
+      var _foods = await FoodsServices.getAllFoods();
+      setState(() {
+        foods = _foods;
+        _loading = false;
+      });
+    } catch (e) {
+      print("error --> $e");
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to load history'),
+        ));
+      }
+    }
+  }
+
   //Function load data
   void loadData() async {
     try {
@@ -139,6 +160,7 @@ class _ListFoodState extends State<ListFood> {
           searchController.text);
       setState(() {
         foods = _foods;
+        _limit = foods.length;
         _loading = false;
       });
       // if (mounted) {

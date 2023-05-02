@@ -46,6 +46,7 @@ class _DetailScreenState extends State<DetailScreen> {
     if (response != null) {
       setState(() {
         foodModel = response;
+        print(foodModel.id);
       });
     }
   }
@@ -116,6 +117,10 @@ class _DetailBodyState extends State<DetailBody> {
       Navigator.pushNamedAndRemoveUntil(
           context, "/login", (Route<dynamic> routes) => false);
     }
+
+    print(widget.foodModel?.id);
+
+    getData(widget.foodModel?.id);
   }
 
   void _addToCart() async {
@@ -146,18 +151,6 @@ class _DetailBodyState extends State<DetailBody> {
         ulasan = _ulasan;
       });
     }
-    getAverageRating();
-  }
-
-  void getAverageRating() {
-    for (var review in ulasan) {
-      totalRating += review.rating;
-    }
-    double averageRating = totalRating / ulasan.length;
-    print('Average rating: $averageRating');
-    setState(() {
-      totalRating = averageRating;
-    });
   }
 
   @override
@@ -201,7 +194,7 @@ class _DetailBodyState extends State<DetailBody> {
                         overflow: TextOverflow.fade,
                       ),
                       RatingBar.builder(
-                        initialRating: totalRating,
+                        initialRating: widget.foodModel?.averageRating ?? 0.0,
                         minRating: 1,
                         direction: Axis.horizontal,
                         allowHalfRating: true,

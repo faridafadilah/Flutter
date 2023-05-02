@@ -17,7 +17,8 @@ class HistoryScreen extends StatelessWidget {
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context, "/dashboard", (Route<dynamic> routes) => false),
         ),
       ),
       body: HistoryBody(),
